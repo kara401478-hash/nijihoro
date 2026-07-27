@@ -1,5 +1,8 @@
 # vtuber-live-tracker
 
+[![CodeQL](https://github.com/kara401478-hash/nijihoro/actions/workflows/codeql.yml/badge.svg)](https://github.com/kara401478-hash/nijihoro/actions/workflows/codeql.yml)
+[![Dependency Audit](https://github.com/kara401478-hash/nijihoro/actions/workflows/dependency-audit.yml/badge.svg)](https://github.com/kara401478-hash/nijihoro/actions/workflows/dependency-audit.yml)
+
 にじさんじ・ホロライブの配信中/配信予定を一覧表示するWebアプリ + 配信開始をSlackに通知するBot。
 データソースは [Holodex API](https://docs.holodex.net/) を利用。
 
@@ -43,6 +46,17 @@ streamlit run app.py
 ### 5. Webアプリを公開したい場合
 [Streamlit Community Cloud](https://streamlit.io/cloud) にこのリポジトリを連携し、
 Secrets に `HOLODEX_API_KEY` を設定すればブラウザから誰でもアクセスできる状態で公開できる。
+
+## セキュリティ
+
+このリポジトリでは以下を自動実行しています(mainブランチへのpush/PR時 + 毎週月曜):
+
+- **CodeQL**: コード自体の静的解析(危険なコードパターンの検出)
+- **pip-audit**: `requirements.txt` の依存パッケージに既知の脆弱性(CVE)がないかチェック
+- **Dependabot**: 依存パッケージの更新を毎週自動チェックし、必要ならPRを作成
+
+上のバッジが緑(passing)であれば、直近のスキャンで問題は見つかっていません。
+初回はActionsタブで手動実行(workflow_dispatchが無いものは次のpushかスケジュールで走ります)して緑になるか確認してください。
 
 ## カスタマイズのヒント
 

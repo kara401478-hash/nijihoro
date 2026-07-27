@@ -62,6 +62,15 @@ with st.sidebar:
     status_filter = st.radio("表示状態", ["すべて", "配信中のみ", "配信予定のみ"], index=0)
     refresh = st.button("🔄 最新の情報に更新")
 
+    st.divider()
+    st.caption("セキュリティ")
+    st.markdown(
+        "[![CodeQL](https://github.com/kara401478-hash/nijihoro/actions/workflows/codeql.yml/badge.svg)]"
+        "(https://github.com/kara401478-hash/nijihoro/actions/workflows/codeql.yml)\n\n"
+        "[![Dependency Audit](https://github.com/kara401478-hash/nijihoro/actions/workflows/dependency-audit.yml/badge.svg)]"
+        "(https://github.com/kara401478-hash/nijihoro/actions/workflows/dependency-audit.yml)"
+    )
+
 if not selected_orgs:
     st.warning("左のサイドバーで箱を1つ以上選んでください。")
     st.stop()
