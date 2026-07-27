@@ -6,7 +6,7 @@
   streamlit run app.py
 """
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import streamlit as st
 
@@ -16,15 +16,35 @@ st.set_page_config(page_title="配信ウォッチャー", page_icon="🔴", layo
 
 WEEKDAY_JP = ["月", "火", "水", "木", "金", "土", "日"]
 
+# 日本時間はDSTが無いので固定オフセットでOK(サーバーのタイムゾーンに依存しない)
+JST = timezone(timedelta(hours=9))
+
 
 def parse_start(v: dict):
     raw = v.get("start_actual") or v.get("start_scheduled")
     if not raw:
         return None
     try:
-        return datetime.fromisoformat(raw.replace("Z", "+00:00")).astimezone()
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).astimezone(JST)
     except ValueError:
         return None
+
+
+def dedupe_videos(items: list[dict]) -> list[dict]:
+    """複数org検索で同じ動画(コラボ等)が重複した場合に1枚へ統合する"""
+    merged: dict[str, dict] = {}
+    for v in items:
+        vid = v.get("id")
+        if not vid:
+            continue
+        if vid not in merged:
+            merged[vid] = dict(v)
+        else:
+            existing_orgs = merged[vid]["_org"].split("/")
+            this_org = v.get("_org", "")
+            if this_org and this_org not in existing_orgs:
+                merged[vid]["_org"] = "/".join(existing_orgs + [this_org])
+    return list(merged.values())
 
 
 def format_date_header(d) -> str:
@@ -56,6 +76,7 @@ if refresh:
     load_videos.clear()
 
 videos = load_videos(tuple(selected_orgs))
+videos = dedupe_videos(videos)
 
 if keyword:
     videos = [
