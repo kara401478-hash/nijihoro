@@ -116,11 +116,35 @@ def render_video_card(v):
     title = v.get("title", "(タイトル不明)")
     video_id = v.get("id")
     org = v.get("_org", "")
-    photo = channel.get("photo")
-    if photo:
-        st.image(photo, width=72)
-    st.markdown(f"`[{org}]` **{channel.get('name', '不明')}**")
-    st.markdown(f"[{title}](https://www.youtube.com/watch?v={video_id})")
+    photo = channel.get("photo", "")
+    name = channel.get("name", "不明")
+    thumb = f"https://i.ytimg.com/vi/{video_id}/mqdefault.jpg"
+    url = f"https://www.youtube.com/watch?v={video_id}"
+
+    st.markdown(
+        f"""
+        <div style="border:1px solid #333;border-radius:10px;overflow:hidden;
+                    height:250px;display:flex;flex-direction:column;
+                    margin-bottom:14px;background:#0e1117;">
+          <img src="{thumb}" style="width:100%;height:110px;object-fit:cover;">
+          <div style="padding:8px 10px;flex:1;overflow:hidden;">
+            <div style="font-size:11px;color:#8ab4f8;margin-bottom:2px;">[{org}]</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+              <img src="{photo}" style="width:20px;height:20px;border-radius:50%;
+                          object-fit:cover;flex-shrink:0;">
+              <span style="font-size:13px;font-weight:bold;white-space:nowrap;
+                          overflow:hidden;text-overflow:ellipsis;">{name}</span>
+            </div>
+            <a href="{url}" target="_blank" style="text-decoration:none;color:#ddd;">
+              <div style="font-size:12.5px;line-height:1.4;display:-webkit-box;
+                          -webkit-line-clamp:3;-webkit-box-orient:vertical;
+                          overflow:hidden;">{title}</div>
+            </a>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # --- 配信中セクション(常に上部・日付フィルタの影響を受けない) ---
