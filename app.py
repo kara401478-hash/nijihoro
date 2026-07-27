@@ -183,7 +183,6 @@ st.markdown(
     f"""
     <div class="vtube-banner" style="background:{THEME['grad']};">
       <p class="vtube-banner-title">🔴 にじさんじ / ホロライブ / ぶいすぽ 配信ウォッチャー</p>
-      <p class="vtube-banner-sub">{THEME['emoji']} Powered by Holodex API</p>
     </div>
     """,
     unsafe_allow_html=True,
