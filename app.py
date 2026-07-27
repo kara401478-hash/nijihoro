@@ -6,7 +6,7 @@
   streamlit run app.py
 """
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import streamlit as st
 
@@ -14,11 +14,65 @@ from holodex_client import ORGS, fetch_live_and_upcoming
 
 st.set_page_config(page_title="配信ウォッチャー", page_icon="🔴", layout="wide")
 
+# --- 季節テーマ(月に応じてバナーのグラデーションと絵文字を切り替え) ---
+SEASON_THEMES = {
+    "summer": {
+        "grad": "linear-gradient(135deg,#00c6ff 0%,#0072ff 55%,#00b4d8 100%)",
+        "emoji": "🌊☀️🍧",
+        "label": "夏",
+    },
+    "autumn": {
+        "grad": "linear-gradient(135deg,#f6d365 0%,#fda085 100%)",
+        "emoji": "🍁🎑",
+        "label": "秋",
+    },
+    "winter": {
+        "grad": "linear-gradient(135deg,#5b86e5 0%,#36d1dc 100%)",
+        "emoji": "❄️⛄",
+        "label": "冬",
+    },
+    "spring": {
+        "grad": "linear-gradient(135deg,#ff9a9e 0%,#fecfef 100%)",
+        "emoji": "🌸🌷",
+        "label": "春",
+    },
+}
+
+
+def get_season() -> str:
+    m = date.today().month
+    if m in (6, 7, 8):
+        return "summer"
+    if m in (9, 10, 11):
+        return "autumn"
+    if m in (12, 1, 2):
+        return "winter"
+    return "spring"
+
+
+THEME = SEASON_THEMES[get_season()]
+
 st.markdown(
     """
     <style>
-    /* GitHubアイコンを非表示(リポジトリへの入り口を目立たせない) */
-    #GithubIcon { display: none; }
+    /* NOTE: GithubIcon(Share/Fork等のツールバー)はStreamlit Community Cloud側が
+       外側から被せているUIのため、アプリ内のCSSからは非表示にできません(仕様上の制約)。 */
+
+    .vtube-banner {
+        border-radius: 18px;
+        padding: 18px 22px 22px 22px;
+        margin-bottom: 18px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    }
+    .vtube-banner-title {
+        font-size: 1.6rem; font-weight: 800; color: #ffffff;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.25);
+        margin: 0;
+    }
+    .vtube-banner-sub {
+        font-size: 0.85rem; color: rgba(255,255,255,0.9);
+        margin-top: 4px;
+    }
 
     .vtube-card {
         border: 1px solid #333;
@@ -57,7 +111,9 @@ st.markdown(
             padding-right: 0.7rem !important;
             padding-top: 1.2rem !important;
         }
-        h1 { font-size: 1.3rem !important; line-height: 1.3 !important; }
+        .vtube-banner { padding: 14px 16px 18px 16px; border-radius: 14px; }
+        .vtube-banner-title { font-size: 1.15rem !important; line-height: 1.3 !important; }
+        .vtube-banner-sub { font-size: 0.75rem !important; }
         h3 { font-size: 1.05rem !important; }
         .vtube-card { height: 210px; }
         .vtube-thumb { height: 85px; }
@@ -106,8 +162,15 @@ def format_date_header(d) -> str:
     return f"{d.month}月{d.day}日({WEEKDAY_JP[d.weekday()]})"
 
 
-st.title("🔴 にじさんじ / ホロライブ / ぶいすぽ 配信ウォッチャー")
-st.caption("Powered by Holodex API")
+st.markdown(
+    f"""
+    <div class="vtube-banner" style="background:{THEME['grad']};">
+      <p class="vtube-banner-title">🔴 にじさんじ / ホロライブ / ぶいすぽ 配信ウォッチャー</p>
+      <p class="vtube-banner-sub">{THEME['emoji']} {THEME['label']}バージョン・Powered by Holodex API</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 # --- サイドバー: フィルタ ---
 with st.sidebar:
