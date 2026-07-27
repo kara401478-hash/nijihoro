@@ -182,7 +182,7 @@ def format_date_header(d) -> str:
 st.markdown(
     f"""
     <div class="vtube-banner" style="background:{THEME['grad']};">
-      <p class="vtube-banner-title">🔴 にじさんじ / ホロライブ / ぶいすぽ 配信ウォッチャー</p>
+      <p class="vtube-banner-title">🔴 にじさんじ / ホロライブ / ぶいすぽ 配信ウォッチャー {THEME['emoji']}</p>
     </div>
     """,
     unsafe_allow_html=True,
