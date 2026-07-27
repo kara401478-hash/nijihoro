@@ -14,6 +14,61 @@ from holodex_client import ORGS, fetch_live_and_upcoming
 
 st.set_page_config(page_title="配信ウォッチャー", page_icon="🔴", layout="wide")
 
+st.markdown(
+    """
+    <style>
+    /* GitHubアイコンを非表示(リポジトリへの入り口を目立たせない) */
+    #GithubIcon { display: none; }
+
+    .vtube-card {
+        border: 1px solid #333;
+        border-radius: 10px;
+        overflow: hidden;
+        height: 250px;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 14px;
+        background: #0e1117;
+    }
+    .vtube-thumb { width: 100%; height: 110px; object-fit: cover; }
+    .vtube-body { padding: 8px 10px; flex: 1; overflow: hidden; }
+    .vtube-org { font-size: 11px; color: #8ab4f8; margin-bottom: 2px; }
+    .vtube-channel-row {
+        display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+    }
+    .vtube-avatar {
+        width: 20px; height: 20px; border-radius: 50%;
+        object-fit: cover; flex-shrink: 0;
+    }
+    .vtube-name {
+        font-size: 13px; font-weight: bold; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
+    }
+    .vtube-title {
+        font-size: 12.5px; line-height: 1.4; display: -webkit-box;
+        -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        overflow: hidden; text-decoration: none; color: #ddd;
+    }
+
+    /* --- モバイル最適化(幅640px以下) --- */
+    @media (max-width: 640px) {
+        .block-container {
+            padding-left: 0.7rem !important;
+            padding-right: 0.7rem !important;
+            padding-top: 1.2rem !important;
+        }
+        h1 { font-size: 1.3rem !important; line-height: 1.3 !important; }
+        h3 { font-size: 1.05rem !important; }
+        .vtube-card { height: 210px; }
+        .vtube-thumb { height: 85px; }
+        .vtube-name { font-size: 12px; }
+        .vtube-title { font-size: 11.5px; -webkit-line-clamp: 2; }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 WEEKDAY_JP = ["月", "火", "水", "木", "金", "土", "日"]
 
 # 日本時間はDSTが無いので固定オフセットでOK(サーバーのタイムゾーンに依存しない)
@@ -147,23 +202,15 @@ def render_video_card(v):
 
     st.markdown(
         f"""
-        <div style="border:1px solid #333;border-radius:10px;overflow:hidden;
-                    height:250px;display:flex;flex-direction:column;
-                    margin-bottom:14px;background:#0e1117;">
-          <img src="{thumb}" style="width:100%;height:110px;object-fit:cover;">
-          <div style="padding:8px 10px;flex:1;overflow:hidden;">
-            <div style="font-size:11px;color:#8ab4f8;margin-bottom:2px;">[{org}]</div>
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-              <img src="{photo}" style="width:20px;height:20px;border-radius:50%;
-                          object-fit:cover;flex-shrink:0;">
-              <span style="font-size:13px;font-weight:bold;white-space:nowrap;
-                          overflow:hidden;text-overflow:ellipsis;">{name}</span>
+        <div class="vtube-card">
+          <img class="vtube-thumb" src="{thumb}">
+          <div class="vtube-body">
+            <div class="vtube-org">[{org}]</div>
+            <div class="vtube-channel-row">
+              <img class="vtube-avatar" src="{photo}">
+              <span class="vtube-name">{name}</span>
             </div>
-            <a href="{url}" target="_blank" style="text-decoration:none;color:#ddd;">
-              <div style="font-size:12.5px;line-height:1.4;display:-webkit-box;
-                          -webkit-line-clamp:3;-webkit-box-orient:vertical;
-                          overflow:hidden;">{title}</div>
-            </a>
+            <a href="{url}" target="_blank" class="vtube-title">{title}</a>
           </div>
         </div>
         """,
