@@ -86,12 +86,25 @@ if keyword:
 live_videos = [v for v in videos if v.get("status") == "live"]
 upcoming_videos = [v for v in videos if v.get("status") == "upcoming"]
 
-# 日付ごとにグルーピング(配信予定用)
+# 日付ごとにグルーピング(配信予定用)。予定時刻を過ぎてまだliveになっていない
+# ものは「押し配信(遅延)」として別枠にする。ただし何時間も放置されている
+# ものはHolodex側のデータが更新されていない古いゴミの可能性が高いので除外する。
+STALE_THRESHOLD = timedelta(hours=3)
+now_jst = datetime.now(JST)
 by_date = defaultdict(list)
+overdue = []
 for v in upcoming_videos:
     dt = parse_start(v)
-    if dt:
+    if not dt:
+        continue
+    diff = now_jst - dt
+    if diff > STALE_THRESHOLD:
+        continue  # 古すぎるデータは表示しない
+    if dt < now_jst:
+        overdue.append((dt, v))
+    else:
         by_date[dt.date()].append((dt, v))
+overdue.sort(key=lambda pair: pair[0])
 
 available_dates = sorted(by_date.keys())
 
@@ -105,9 +118,11 @@ with st.sidebar:
     else:
         selected_dates = set()
 
+displayed_upcoming_count = len(overdue) + sum(len(v) for v in by_date.values())
+
 c1, c2 = st.columns(2)
 c1.metric("配信中", len(live_videos))
-c2.metric("配信予定", len(upcoming_videos))
+c2.metric("配信予定", displayed_upcoming_count)
 st.divider()
 
 
@@ -152,6 +167,15 @@ if status_filter in ("すべて", "配信中のみ") and live_videos:
     st.subheader("🔴 現在、配信中！")
     cols = st.columns(3)
     for i, v in enumerate(live_videos):
+        with cols[i % 3]:
+            render_video_card(v)
+    st.divider()
+
+# --- 押し配信(予定時刻を過ぎたがまだ開始していない) ---
+if status_filter in ("すべて", "配信予定のみ") and overdue:
+    st.subheader("⏰ まもなく開始？(予定時刻超過)")
+    cols = st.columns(3)
+    for i, (dt, v) in enumerate(overdue):
         with cols[i % 3]:
             render_video_card(v)
     st.divider()
