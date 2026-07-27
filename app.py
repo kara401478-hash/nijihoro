@@ -18,21 +18,25 @@ st.set_page_config(page_title="配信ウォッチャー", page_icon="🔴", layo
 SEASON_THEMES = {
     "summer": {
         "grad": "linear-gradient(135deg,#00c6ff 0%,#0072ff 55%,#00b4d8 100%)",
+        "bg": "linear-gradient(180deg,#d6f3ff 0%,#eefcff 260px,#ffffff 520px)",
         "emoji": "🌊☀️🍧",
         "label": "夏",
     },
     "autumn": {
         "grad": "linear-gradient(135deg,#f6d365 0%,#fda085 100%)",
+        "bg": "linear-gradient(180deg,#fff2d9 0%,#fff8ec 260px,#ffffff 520px)",
         "emoji": "🍁🎑",
         "label": "秋",
     },
     "winter": {
         "grad": "linear-gradient(135deg,#5b86e5 0%,#36d1dc 100%)",
+        "bg": "linear-gradient(180deg,#eaf6ff 0%,#f3fbff 260px,#ffffff 520px)",
         "emoji": "❄️⛄",
         "label": "冬",
     },
     "spring": {
         "grad": "linear-gradient(135deg,#ff9a9e 0%,#fecfef 100%)",
+        "bg": "linear-gradient(180deg,#ffe9f0 0%,#fff3f7 260px,#ffffff 520px)",
         "emoji": "🌸🌷",
         "label": "春",
     },
@@ -75,18 +79,19 @@ st.markdown(
     }
 
     .vtube-card {
-        border: 1px solid #333;
+        border: 1px solid #ddd;
         border-radius: 10px;
         overflow: hidden;
         height: 250px;
         display: flex;
         flex-direction: column;
         margin-bottom: 14px;
-        background: #0e1117;
+        background: #ffffff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
     .vtube-thumb { width: 100%; height: 110px; object-fit: cover; }
     .vtube-body { padding: 8px 10px; flex: 1; overflow: hidden; }
-    .vtube-org { font-size: 11px; color: #8ab4f8; margin-bottom: 2px; }
+    .vtube-org { font-size: 11px; color: #0072ff; margin-bottom: 2px; font-weight: 600; }
     .vtube-channel-row {
         display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
     }
@@ -96,12 +101,12 @@ st.markdown(
     }
     .vtube-name {
         font-size: 13px; font-weight: bold; white-space: nowrap;
-        overflow: hidden; text-overflow: ellipsis;
+        overflow: hidden; text-overflow: ellipsis; color: #111;
     }
     .vtube-title {
         font-size: 12.5px; line-height: 1.4; display: -webkit-box;
         -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-        overflow: hidden; text-decoration: none; color: #ddd;
+        overflow: hidden; text-decoration: none; color: #333;
     }
 
     /* --- モバイル最適化(幅640px以下) --- */
@@ -120,6 +125,18 @@ st.markdown(
         .vtube-name { font-size: 12px; }
         .vtube-title { font-size: 11.5px; -webkit-line-clamp: 2; }
     }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    f"""
+    <style>
+    [data-testid="stAppViewContainer"], .stApp {{
+        background: {THEME['bg']};
+        background-attachment: fixed;
+    }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -166,7 +183,7 @@ st.markdown(
     f"""
     <div class="vtube-banner" style="background:{THEME['grad']};">
       <p class="vtube-banner-title">🔴 にじさんじ / ホロライブ / ぶいすぽ 配信ウォッチャー</p>
-      <p class="vtube-banner-sub">{THEME['emoji']} {THEME['label']}バージョン・Powered by Holodex API</p>
+      <p class="vtube-banner-sub">{THEME['emoji']} Powered by Holodex API</p>
     </div>
     """,
     unsafe_allow_html=True,
