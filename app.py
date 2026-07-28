@@ -217,8 +217,19 @@ if keyword:
         v for v in videos if keyword.lower() in v.get("channel", {}).get("name", "").lower()
     ]
 
-live_videos = [v for v in videos if v.get("status") == "live"]
+live_videos_raw = [v for v in videos if v.get("status") == "live"]
 upcoming_videos = [v for v in videos if v.get("status") == "upcoming"]
+
+# 配信中(status="live")のまま何時間も更新されていないものは、Holodex側が
+# 終了検知に失敗している古いデータの可能性が高いので除外する。
+STALE_LIVE_THRESHOLD = timedelta(hours=8)
+now_jst = datetime.now(JST)
+live_videos = []
+for v in live_videos_raw:
+    dt = parse_start(v)
+    if dt and (now_jst - dt) > STALE_LIVE_THRESHOLD:
+        continue
+    live_videos.append(v)
 
 # 日付ごとにグルーピング(配信予定用)。予定時刻を過ぎてまだliveになっていない
 # ものは「押し配信(遅延)」として別枠にする。ただし何時間も放置されている
