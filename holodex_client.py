@@ -12,9 +12,8 @@ import requests
 BASE_URL = "https://holodex.net/api/v2"
 
 # よく使う org (グループ) 名。Holodex側の指定に合わせる。
-# ぶいすぽ!はHolodex上では "VSPO!" 表記。もし拾えない場合は
-# https://holodex.net/ の左上プルダウンで実際の表記を確認して調整してください。
-ORGS = ["Nijisanji", "Hololive", "VSPO!"]
+# ぶいすぽ!はHolodex上では "VSpo" 表記(大文字小文字が独特なので注意)。
+ORGS = ["Nijisanji", "Hololive", "VSpo"]
 
 
 def _get_api_key() -> str | None:
