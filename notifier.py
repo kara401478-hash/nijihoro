@@ -1,52 +1,21 @@
 """
-新しく配信が始まったライバーを検知して Slack に通知するスクリプト。
-GitHub Actions で定期実行される想定 (.github/workflows/notify.yml)。
+Holodexからのデータ取得に失敗した時だけSlackに通知するスクリプト。
+GitHub Actionsで定期実行される想定 (.github/workflows/notify.yml)。
 
 必要な環境変数:
   HOLODEX_API_KEY   Holodex APIキー
   SLACK_WEBHOOK_URL Slack Incoming Webhook URL
-
-状態管理:
-  notified.json に「前回時点で通知済み(=live中)だった動画ID」を保存し、
-  差分(新しく live になったもの)だけ通知する。
-  配信が終了したIDは次回実行時に自然と消える(現在のlive集合で上書きするため)。
 """
-import json
 import os
 import sys
-from pathlib import Path
 
 import requests
 
-from holodex_client import ORGS, fetch_currently_live
-
-STATE_FILE = Path(__file__).parent / "notified.json"
+from holodex_client import ORGS, fetch_live_and_upcoming_with_status
 
 
-def load_notified_ids() -> set[str]:
-    if not STATE_FILE.exists():
-        return set()
-    try:
-        return set(json.loads(STATE_FILE.read_text(encoding="utf-8")))
-    except (json.JSONDecodeError, OSError):
-        return set()
-
-
-def save_notified_ids(ids: set[str]) -> None:
-    STATE_FILE.write_text(json.dumps(sorted(ids), ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-def send_slack_message(webhook_url: str, video: dict) -> None:
-    channel = video.get("channel", {})
-    title = video.get("title", "(タイトル不明)")
-    video_id = video.get("id")
-    org = video.get("_org", "")
-    url = f"https://www.youtube.com/watch?v={video_id}"
-
-    payload = {
-        "text": f"🔴 *[{org}] {channel.get('name', '不明')}* が配信を開始しました！\n"
-        f"*{title}*\n{url}"
-    }
+def send_slack_alert(webhook_url: str, message: str) -> None:
+    payload = {"text": f"🚨 *配信ウォッチャー: データ取得エラー*\n{message}"}
     resp = requests.post(webhook_url, json=payload, timeout=10)
     resp.raise_for_status()
 
@@ -57,22 +26,22 @@ def main() -> int:
         print("SLACK_WEBHOOK_URL が設定されていません。", file=sys.stderr)
         return 1
 
-    current_live = fetch_currently_live(ORGS)
-    current_ids = {v["id"] for v in current_live if v.get("id")}
+    videos, failed_orgs = fetch_live_and_upcoming_with_status(ORGS)
 
-    notified_ids = load_notified_ids()
-    new_lives = [v for v in current_live if v["id"] not in notified_ids]
-
-    for video in new_lives:
+    if failed_orgs:
+        message = (
+            f"以下のorgでHolodexからのデータ取得に失敗しました: {', '.join(failed_orgs)}\n"
+            "しばらく経っても直らない場合はHolodex側の障害やAPIキーの期限切れの可能性があります。"
+        )
         try:
-            send_slack_message(webhook_url, video)
-            print(f"通知送信: {video.get('channel', {}).get('name')} / {video.get('title')}")
+            send_slack_alert(webhook_url, message)
+            print(f"エラー通知を送信しました: {failed_orgs}")
         except requests.RequestException as e:
-            print(f"Slack送信失敗: {e}", file=sys.stderr)
+            print(f"Slack送信自体にも失敗: {e}", file=sys.stderr)
+            return 1
+        return 1
 
-    # 現在liveの集合で上書き(終了した配信のIDは自然に消える)
-    save_notified_ids(current_ids)
-    print(f"現在の配信数: {len(current_ids)} / 新規通知: {len(new_lives)}")
+    print(f"取得成功。現在の配信/予定件数: {len(videos)}")
     return 0
 
 
