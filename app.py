@@ -10,7 +10,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import streamlit as st
 
-from holodex_client import ORGS, fetch_live_and_upcoming
+from holodex_client import ORGS, dedupe_videos, fetch_live_and_upcoming
 
 st.set_page_config(page_title="配信ウォッチャー", page_icon="🔴", layout="wide")
 
@@ -158,23 +158,6 @@ def parse_start(v: dict):
         return None
 
 
-def dedupe_videos(items: list[dict]) -> list[dict]:
-    """複数org検索で同じ動画(コラボ等)が重複した場合に1枚へ統合する"""
-    merged: dict[str, dict] = {}
-    for v in items:
-        vid = v.get("id")
-        if not vid:
-            continue
-        if vid not in merged:
-            merged[vid] = dict(v)
-        else:
-            existing_orgs = merged[vid]["_org"].split("/")
-            this_org = v.get("_org", "")
-            if this_org and this_org not in existing_orgs:
-                merged[vid]["_org"] = "/".join(existing_orgs + [this_org])
-    return list(merged.values())
-
-
 def format_date_header(d) -> str:
     return f"{d.month}月{d.day}日({WEEKDAY_JP[d.weekday()]})"
 
@@ -203,11 +186,24 @@ def is_holostars(channel_name: str) -> bool:
     return any(marker.lower() in name_lower for marker in HOLOSTARS_NAMES)
 
 
-def is_overseas_channel(channel_name: str) -> bool:
-    """EN(英語圏)・ID(インドネシア)などの海外勢を判定する"""
-    name_lower = channel_name.lower()
-    markers = ["nijisanji en", "hololive-en", "hololive-id", "nijisanji id"]
-    return any(m in name_lower for m in markers)
+def is_overseas_channel(channel: dict) -> bool:
+    """EN(英語圏)・ID(インドネシア)などの海外勢を判定する。
+    チャンネル名の表記だけでは当てにならない場合があるため、
+    Holodexの suborg フィールド(存在する場合)も合わせて見る。"""
+    name_lower = channel.get("name", "").lower()
+    suborg_lower = (channel.get("suborg") or "").lower()
+    name_markers = ["nijisanji en", "hololive-en", "hololive-id", "nijisanji id"]
+    suborg_markers = ["english", "indonesia"]
+    return any(m in name_lower for m in name_markers) or any(
+        m in suborg_lower for m in suborg_markers
+    )
+
+
+# Holodex側の分類ミスで、にじさんじ/ホロライブと無関係なチャンネルが
+# 稀に紛れ込むことがあるため、判明したものは手動で除外する。
+MANUALLY_EXCLUDED_CHANNEL_NAMES = [
+    "monsterz mate",
+]
 
 
 st.markdown(
@@ -244,6 +240,11 @@ if refresh:
 videos = load_videos(tuple(selected_orgs))
 videos = dedupe_videos(videos)
 
+# 複数org(例: "Nijisanji/Hololive")にまたがって出てくるチャンネルは、
+# 正規のコラボではなくHolodex側の分類ミスであるケースがほとんどのため、
+# 一旦まとめて非表示にする。
+videos = [v for v in videos if "/" not in v.get("_org", "")]
+
 # ホロスターズ(ホロライブの男性ブランド)を除外
 videos = [
     v for v in videos
@@ -256,10 +257,19 @@ videos = [
     if "vspo" not in v.get("channel", {}).get("name", "").lower()
 ]
 
+# Holodex側の分類ミスで判明した、無関係なチャンネルを除外
+videos = [
+    v for v in videos
+    if not any(
+        excluded in v.get("channel", {}).get("name", "").lower()
+        for excluded in MANUALLY_EXCLUDED_CHANNEL_NAMES
+    )
+]
+
 if not show_en:
     videos = [
         v for v in videos
-        if not is_overseas_channel(v.get("channel", {}).get("name", ""))
+        if not is_overseas_channel(v.get("channel", {}))
     ]
 
 if keyword:
