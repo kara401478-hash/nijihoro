@@ -250,6 +250,12 @@ videos = [
     if not is_holostars(v.get("channel", {}).get("name", ""))
 ]
 
+# Holodex側の分類ミスで稀にHololive等に紛れ込むVSPO勢を除外
+videos = [
+    v for v in videos
+    if "vspo" not in v.get("channel", {}).get("name", "").lower()
+]
+
 if not show_en:
     videos = [
         v for v in videos
