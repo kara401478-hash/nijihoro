@@ -212,6 +212,13 @@ if refresh:
 videos = load_videos(tuple(selected_orgs))
 videos = dedupe_videos(videos)
 
+# ホロスターズ(ホロライブの男性ブランド)を除外。
+# チャンネル名に必ず"HOLOSTARS"が含まれる命名規則を利用している。
+videos = [
+    v for v in videos
+    if "holostars" not in v.get("channel", {}).get("name", "").lower()
+]
+
 if keyword:
     videos = [
         v for v in videos if keyword.lower() in v.get("channel", {}).get("name", "").lower()
