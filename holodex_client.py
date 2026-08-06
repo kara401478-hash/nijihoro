@@ -104,3 +104,25 @@ def fetch_currently_live(orgs: list[str], limit: int = 50) -> list[dict]:
     """live中のものだけに絞って取得(通知botで使う)"""
     all_items = fetch_live_and_upcoming(orgs, limit=limit)
     return [v for v in all_items if v.get("status") == "live"]
+
+
+def dedupe_videos(items: list[dict]) -> list[dict]:
+    """
+    複数org検索で同じ動画IDが重複した場合に1枚へ統合する。
+    正規のコラボではなく、Holodex側のチャンネル分類ミスで同じチャンネルが
+    複数orgにまたがって出てくるケースがほとんどのため、統合後の _org に
+    "/" が含まれるものは分類ミスの疑いがあるサインとして扱える。
+    """
+    merged: dict[str, dict] = {}
+    for v in items:
+        vid = v.get("id")
+        if not vid:
+            continue
+        if vid not in merged:
+            merged[vid] = dict(v)
+        else:
+            existing_orgs = merged[vid]["_org"].split("/")
+            this_org = v.get("_org", "")
+            if this_org and this_org not in existing_orgs:
+                merged[vid]["_org"] = "/".join(existing_orgs + [this_org])
+    return list(merged.values())
