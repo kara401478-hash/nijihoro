@@ -50,12 +50,23 @@ def _fetch_for_org_candidate(org_param: str, limit: int) -> list[dict]:
 def fetch_live_and_upcoming(orgs: list[str], limit: int = 50) -> list[dict]:
     """
     指定した org (表示名, 複数可) の「配信中 + 配信予定」動画一覧を取得する。
-    Holodexの /live エンドポイントは status=live,upcoming を返す。
+    (取得失敗を検知したい場合は fetch_live_and_upcoming_with_status を使う)
+    """
+    videos, _failed = fetch_live_and_upcoming_with_status(orgs, limit=limit)
+    return videos
 
-    表記ゆれのある org (例: VSPO) は ORG_API_CANDIDATES の候補を順番に試し、
-    最初にヒットしたものを使う。
 
-    戻り値の各要素(抜粋):
+def fetch_live_and_upcoming_with_status(
+    orgs: list[str], limit: int = 50
+) -> tuple[list[dict], list[str]]:
+    """
+    fetch_live_and_upcoming と同じだが、取得に失敗したorg名のリストも返す。
+    (通信エラー等で全候補が失敗した場合のみ「失敗」として扱う。
+     単に配信が0件だったケースは失敗として扱わない)
+
+    戻り値: (動画リスト, 失敗したorg名のリスト)
+
+    各動画要素(抜粋):
       - id: YouTube動画ID
       - title: タイトル
       - status: "live" | "upcoming"
@@ -64,22 +75,29 @@ def fetch_live_and_upcoming(orgs: list[str], limit: int = 50) -> list[dict]:
       - _org: 表示用の箱名(ORGSと同じ表記に統一)
     """
     results: list[dict] = []
+    failed_orgs: list[str] = []
     for org in orgs:
         candidates = ORG_API_CANDIDATES.get(org, [org])
         org_data: list[dict] = []
+        last_error: Exception | None = None
+        got_success_response = False
         for candidate in candidates:
             try:
                 data = _fetch_for_org_candidate(candidate, limit)
+                got_success_response = True
             except requests.RequestException as e:
+                last_error = e
                 print(f"[holodex_client] {org}({candidate}) の取得に失敗: {e}")
                 continue
             if data:
                 org_data = data
                 break  # ヒットしたらそれ以上候補を試さない
+        if not got_success_response and last_error is not None:
+            failed_orgs.append(org)
         for item in org_data:
             item["_org"] = org  # 表示は統一名にする
         results.extend(org_data)
-    return results
+    return results, failed_orgs
 
 
 def fetch_currently_live(orgs: list[str], limit: int = 50) -> list[dict]:
