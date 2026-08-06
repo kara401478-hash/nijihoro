@@ -1,5 +1,5 @@
 """
-にじさんじ・ホロライブ・ぶいすぽ 配信一覧ビューア
+にじさんじ・ホロライブ 配信一覧ビューア
 
 実行方法:
   export HOLODEX_API_KEY=xxxxx   # https://holodex.net/ で無料発行
@@ -179,6 +179,35 @@ def format_date_header(d) -> str:
     return f"{d.month}月{d.day}日({WEEKDAY_JP[d.weekday()]})"
 
 
+# ホロスターズ(ホロライブの男性ブランド)のメンバー名。
+# JP勢はチャンネル名に"HOLOSTARS"の文字列が入らない命名規則(例: "Roberu Ch. 夕刻ロベル")
+# のため、org/名前だけでは自動判定できず、メンバー名を直接リストして除外している。
+# 新メンバー debut時はここに追記が必要。
+HOLOSTARS_NAMES = [
+    # JP (現役)
+    "夕刻ロベル", "荒咬オウガ", "影山シエン", "アステル・レダ", "アルランディス",
+    "夜十神封魔", "羽継烏有", "水無世燐央", "奏手イヅル", "花咲みやび", "律可", "岸堂天真",
+    # EN (TEMPUS / ARMIS)
+    "Regis Altare", "Axel Syrios", "Gavis Bettel", "Machina X Flayon",
+    "Banzoin Hakka", "Josuiji Shinri", "Jurard T Rexford", "Goldbullet",
+    "Octavio", "Crimzon Ruze",
+    # 卒業/活動終了(念のため)
+    "鏡見キラ", "月下カオル", "薬師寺朱雀", "緋崎ガンマ", "Magni Dezmond", "Noir Vesper",
+    # HOLOSTARSの文字列が入るチャンネル名(EN勢の一部はこちらでも拾える)
+    "holostars",
+]
+
+
+def is_holostars(channel_name: str) -> bool:
+    name_lower = channel_name.lower()
+    return any(marker.lower() in name_lower for marker in HOLOSTARS_NAMES)
+
+
+def is_en_channel(channel_name: str) -> bool:
+    name_lower = channel_name.lower()
+    return "nijisanji en" in name_lower or "hololive-en" in name_lower
+
+
 st.markdown(
     f"""
     <div class="vtube-banner" style="background:{THEME['grad']};">
@@ -194,6 +223,7 @@ with st.sidebar:
     selected_orgs = st.multiselect("箱を選択", ORGS, default=ORGS)
     keyword = st.text_input("推し検索(チャンネル名の一部)", "")
     status_filter = st.radio("表示状態", ["すべて", "配信中のみ", "配信予定のみ"], index=0)
+    show_en = st.checkbox("海外(EN)勢も表示する", value=True)
     refresh = st.button("🔄 最新の情報に更新")
 
 if not selected_orgs:
@@ -212,12 +242,17 @@ if refresh:
 videos = load_videos(tuple(selected_orgs))
 videos = dedupe_videos(videos)
 
-# ホロスターズ(ホロライブの男性ブランド)を除外。
-# チャンネル名に必ず"HOLOSTARS"が含まれる命名規則を利用している。
+# ホロスターズ(ホロライブの男性ブランド)を除外
 videos = [
     v for v in videos
-    if "holostars" not in v.get("channel", {}).get("name", "").lower()
+    if not is_holostars(v.get("channel", {}).get("name", ""))
 ]
+
+if not show_en:
+    videos = [
+        v for v in videos
+        if not is_en_channel(v.get("channel", {}).get("name", ""))
+    ]
 
 if keyword:
     videos = [
