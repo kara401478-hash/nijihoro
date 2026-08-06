@@ -203,9 +203,11 @@ def is_holostars(channel_name: str) -> bool:
     return any(marker.lower() in name_lower for marker in HOLOSTARS_NAMES)
 
 
-def is_en_channel(channel_name: str) -> bool:
+def is_overseas_channel(channel_name: str) -> bool:
+    """EN(英語圏)・ID(インドネシア)などの海外勢を判定する"""
     name_lower = channel_name.lower()
-    return "nijisanji en" in name_lower or "hololive-en" in name_lower
+    markers = ["nijisanji en", "hololive-en", "hololive-id", "nijisanji id"]
+    return any(m in name_lower for m in markers)
 
 
 st.markdown(
@@ -223,7 +225,7 @@ with st.sidebar:
     selected_orgs = st.multiselect("箱を選択", ORGS, default=ORGS)
     keyword = st.text_input("推し検索(チャンネル名の一部)", "")
     status_filter = st.radio("表示状態", ["すべて", "配信中のみ", "配信予定のみ"], index=0)
-    show_en = st.checkbox("海外(EN)勢も表示する", value=True)
+    show_en = st.checkbox("海外勢(EN/ID)も表示する", value=True)
     refresh = st.button("🔄 最新の情報に更新")
 
 if not selected_orgs:
@@ -251,7 +253,7 @@ videos = [
 if not show_en:
     videos = [
         v for v in videos
-        if not is_en_channel(v.get("channel", {}).get("name", ""))
+        if not is_overseas_channel(v.get("channel", {}).get("name", ""))
     ]
 
 if keyword:
