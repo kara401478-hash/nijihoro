@@ -1,0 +1,25 @@
+name: Keep Streamlit App Awake
+
+on:
+  schedule:
+    # 6時間毎(UTC基準)。スリープ閾値の12時間より十分短い間隔にしてある。
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  keep-awake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Visit app to keep it awake
+        run: python keep_awake.py
