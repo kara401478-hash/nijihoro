@@ -203,6 +203,8 @@ def is_overseas_channel(channel: dict) -> bool:
 # 稀に紛れ込むことがあるため、判明したものは手動で除外する。
 MANUALLY_EXCLUDED_CHANNEL_NAMES = [
     "monsterz mate",
+    "MonsterZ MATE",
+    "IZIGENIA",
 ]
 
 
