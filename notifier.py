@@ -51,9 +51,13 @@ def main() -> int:
         )
 
     if problems:
+        detail = "\n\n".join(problems)
+        print("=== 検知した内容 ===")
+        print(detail)
+        print("====================")
         try:
-            send_slack_alert(webhook_url, "\n\n".join(problems))
-            print("異常を検知し通知しました。")
+            send_slack_alert(webhook_url, detail)
+            print("Slackへの通知も送信しました。")
         except requests.RequestException as e:
             print(f"Slack送信自体にも失敗: {e}", file=sys.stderr)
             return 1
