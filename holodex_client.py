@@ -20,6 +20,17 @@ ORG_API_CANDIDATES: dict[str, list[str]] = {
     "Hololive": ["Hololive"],
 }
 
+# 複数orgにまたがって出てくるチャンネルのうち、確認の結果「正規のコラボ/
+# 問題ない」と分かったチャンネル名(小文字)。ここに追記すると、
+# app.pyでの非表示・notifier.pyでのアラート対象から外れる。
+ALLOWED_CROSS_ORG_CHANNELS: list[str] = [
+    # 例: "channel name here",
+]
+
+
+def is_allowed_cross_org(channel_name: str) -> bool:
+    return channel_name.lower() in ALLOWED_CROSS_ORG_CHANNELS
+
 
 def _get_api_key() -> str | None:
     return os.environ.get("HOLODEX_API_KEY")

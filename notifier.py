@@ -12,7 +12,12 @@ import sys
 
 import requests
 
-from holodex_client import ORGS, dedupe_videos, fetch_live_and_upcoming_with_status
+from holodex_client import (
+    ORGS,
+    dedupe_videos,
+    fetch_live_and_upcoming_with_status,
+    is_allowed_cross_org,
+)
 
 
 def send_slack_alert(webhook_url: str, message: str) -> None:
@@ -37,7 +42,11 @@ def main() -> int:
         )
 
     deduped = dedupe_videos(videos)
-    cross_org = [v for v in deduped if "/" in v.get("_org", "")]
+    cross_org = [
+        v for v in deduped
+        if "/" in v.get("_org", "")
+        and not is_allowed_cross_org(v.get("channel", {}).get("name", ""))
+    ]
     if cross_org:
         names = sorted({
             v.get("channel", {}).get("name", "不明") for v in cross_org
@@ -45,9 +54,10 @@ def main() -> int:
         problems.append(
             "複数orgにまたがるチャンネルを検知しました(Holodex側の分類ミスの可能性): "
             + ", ".join(names)
-            + "\nアプリ側では一旦非表示にしていますが、無関係なチャンネルであれば"
-            "app.pyのMANUALLY_EXCLUDED_CHANNEL_NAMESに追記してください。"
-            "\n※このアラートは解消されるまで実行のたびに繰り返し届きます。"
+            + "\n無関係なチャンネルなら app.py の MANUALLY_EXCLUDED_CHANNEL_NAMES に、"
+            "正規のコラボ等で問題なければ holodex_client.py の "
+            "ALLOWED_CROSS_ORG_CHANNELS にチャンネル名(小文字)を追記してください。"
+            "\n※このアラートは解消されるまで繰り返し届きます。"
         )
 
     if problems:

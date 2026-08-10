@@ -10,7 +10,12 @@ from datetime import date, datetime, timedelta, timezone
 
 import streamlit as st
 
-from holodex_client import ORGS, dedupe_videos, fetch_live_and_upcoming
+from holodex_client import (
+    ORGS,
+    dedupe_videos,
+    fetch_live_and_upcoming,
+    is_allowed_cross_org,
+)
 
 st.set_page_config(page_title="配信ウォッチャー", page_icon="🔴", layout="wide")
 
@@ -203,8 +208,6 @@ def is_overseas_channel(channel: dict) -> bool:
 # 稀に紛れ込むことがあるため、判明したものは手動で除外する。
 MANUALLY_EXCLUDED_CHANNEL_NAMES = [
     "monsterz mate",
-    "MonsterZ MATE",
-    "IZIGENIA",
 ]
 
 
@@ -244,8 +247,12 @@ videos = dedupe_videos(videos)
 
 # 複数org(例: "Nijisanji/Hololive")にまたがって出てくるチャンネルは、
 # 正規のコラボではなくHolodex側の分類ミスであるケースがほとんどのため、
-# 一旦まとめて非表示にする。
-videos = [v for v in videos if "/" not in v.get("_org", "")]
+# ホワイトリスト(ALLOWED_CROSS_ORG_CHANNELS)に無いものは一旦まとめて非表示にする。
+videos = [
+    v for v in videos
+    if "/" not in v.get("_org", "")
+    or is_allowed_cross_org(v.get("channel", {}).get("name", ""))
+]
 
 # ホロスターズ(ホロライブの男性ブランド)を除外
 videos = [
