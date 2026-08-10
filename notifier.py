@@ -48,12 +48,13 @@ def main() -> int:
         and not is_allowed_cross_org(v.get("channel", {}).get("name", ""))
     ]
     if cross_org:
-        names = sorted({
-            v.get("channel", {}).get("name", "不明") for v in cross_org
+        details = sorted({
+            f"{v.get('channel', {}).get('name', '不明')} (_org={v.get('_org', '')})"
+            for v in cross_org
         })
         problems.append(
             "複数orgにまたがるチャンネルを検知しました(Holodex側の分類ミスの可能性): "
-            + ", ".join(names)
+            + ", ".join(details)
             + "\n無関係なチャンネルなら app.py の MANUALLY_EXCLUDED_CHANNEL_NAMES に、"
             "正規のコラボ等で問題なければ holodex_client.py の "
             "ALLOWED_CROSS_ORG_CHANNELS にチャンネル名(小文字)を追記してください。"

@@ -24,7 +24,7 @@ ORG_API_CANDIDATES: dict[str, list[str]] = {
 # 問題ない」と分かったチャンネル名(小文字)。ここに追記すると、
 # app.pyでの非表示・notifier.pyでのアラート対象から外れる。
 ALLOWED_CROSS_ORG_CHANNELS: list[str] = [
-    # 例: "channel name here",
+    "空星きらめ/sorahoshi kirame【にじさんじ】",
 ]
 
 
