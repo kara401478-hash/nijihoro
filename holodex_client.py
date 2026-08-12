@@ -83,7 +83,7 @@ def fetch_live_and_upcoming_with_status(
       - status: "live" | "upcoming"
       - start_scheduled / start_actual: 開始時刻
       - channel: {name, id, photo, ...}
-      - _org: 表示用の箱名(ORGSと同じ表記に統一)
+      - _org: 表示用の箱名(チャンネル自身のorgフィールドを優先。無ければ検索クエリのorg)
     """
     results: list[dict] = []
     failed_orgs: list[str] = []
@@ -106,7 +106,12 @@ def fetch_live_and_upcoming_with_status(
         if not got_success_response and last_error is not None:
             failed_orgs.append(org)
         for item in org_data:
-            item["_org"] = org  # 表示は統一名にする
+            # クエリに使ったorg(query側の都合)ではなく、そのチャンネル自身が
+            # 持っている本来のorgフィールドを優先する。Holodexは検索クエリの
+            # 都合で本来と違うorgの結果にチャンネルが紛れ込むことがあるため、
+            # チャンネル自身の申告(channel.org)の方が信頼できる。
+            channel_true_org = (item.get("channel", {}) or {}).get("org")
+            item["_org"] = channel_true_org or org
         results.extend(org_data)
     return results, failed_orgs
 
