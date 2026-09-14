@@ -245,6 +245,13 @@ if refresh:
 videos = load_videos(tuple(selected_orgs))
 videos = dedupe_videos(videos)
 
+# チャンネル自身の本来のorgが Nijisanji/Hololive 以外(774inc等)のものは、
+# コラボ配信などで紛れ込むことがあるため非表示にする。
+videos = [
+    v for v in videos
+    if any(o in v.get("_org", "").split("/") for o in ORGS)
+]
+
 # 複数org(例: "Nijisanji/Hololive")にまたがって出てくるチャンネルは、
 # 正規のコラボではなくHolodex側の分類ミスであるケースがほとんどのため、
 # ホワイトリスト(ALLOWED_CROSS_ORG_CHANNELS)に無いものは一旦まとめて非表示にする。
